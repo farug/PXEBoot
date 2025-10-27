@@ -1,0 +1,47 @@
+# Logs
+*.log
+boot.log
+*.log.*
+
+# Lock files
+locks/
+*.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+*.kpxe
+*.rom
+undionly.kpxe
+
+# RPM files
+*.rpm
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# RHEL ISO content
+rhel/vmlinuz
+rhel/initrd.img
+rhel/
+
+# Sensitive data (uncomment if needed)
+# devices.ini
+# *.ks
