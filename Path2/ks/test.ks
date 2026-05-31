@@ -1,54 +1,53 @@
 #version=RHEL8
+text
+skipx
+
 lang en_US.UTF-8
 keyboard us
 timezone Europe/Istanbul --isUtc
 
-network --bootproto=dhcp --device=eth0 --onboot=on --hostname=test-a
+repo --name="BaseOS" --baseurl="http://192.168.10.10/content/BaseOS"
+repo --name="AppStream" --baseurl="http://192.168.10.10/content/AppStream"
 
-# Users
+network --bootproto=dhcp --device=link --activate --onboot=on --hostname=test-a
+
 rootpw --plaintext test123
 user --name=maintain --groups=wheel --password=test123 --plaintext
 
 auth --enableshadow --passalgo=sha512
 selinux --enforcing
-firewall --enabled --service=ssh
+firewall --enabled --service=ssh --port=3389:tcp
 
-services --enabled=sshd,network
+services --enabled=sshd,NetworkManager,xrdp
 
 bootloader --location=mbr --boot-drive=sda
 reboot
 
-# Disk setup: Full disk encryption with manual LVM
 ignoredisk --only-use=sda
 zerombr
 clearpart --all --initlabel --drives=sda
 
-# Create boot partition
-part /boot --fstype="xfs" --size=1024 --asprimary
+part /boot --fstype=xfs --size=1024 --ondisk=sda --asprimary
 
-# Encrypted partition for LVM
-part pv.01 --size=1 --grow --ondisk=sda
-pvcreate --encrypted --passphrase=test123 pv.01
+part pv.01 --fstype=lvmpv --size=1 --grow --ondisk=sda --encrypted --passphrase=test123
 
-# Create LVM volume group and LVs
 volgroup vg0 pv.01
-logvol / --vgname=vg0 --name=root --fstype="xfs" --size=102400
-logvol /home --vgname=vg0 --name=home --fstype="xfs" --size=1 --grow
-logvol swap --vgname=vg0 --name=swap --fstype="swap" --size=4096
 
-# Package selection
+logvol /     --vgname=vg0 --name=root --fstype=xfs  --size=102400
+logvol /home --vgname=vg0 --name=home --fstype=xfs  --size=1 --grow
+logvol swap  --vgname=vg0 --name=swap --fstype=swap --size=4096
+
 %packages
 @^graphical-server-environment
-@gnome-desktop
 iptables-services
 xrdp
 %end
 
-# Post-install configuration
 %post
+systemctl enable sshd
 systemctl enable iptables
 systemctl enable xrdp
-firewall-cmd --permanent --add-port=3389/tcp
-firewall-cmd --reload
+systemctl set-default graphical.target
+
 echo "Kickstart with encrypted LVM, GNOME, and xrdp is complete." > /root/ks-done.txt
 %end
